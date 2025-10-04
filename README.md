@@ -17,12 +17,12 @@ Add these dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  soti_schema_plus: ^1.2.0
+  soti_schema_plus: ^1.3.0
   freezed_annotation: ^3.1.0  # if using freezed
   json_annotation: ^4.9.0      # if using json_serializable
 
 dev_dependencies:
-  build_runner: ^2.4.6
+  build_runner: ^2.4.13
   freezed: ^3.2.0               # if using freezed
   json_serializable: ^6.11.0    # if using json_serializable
 ```

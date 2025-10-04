@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
@@ -37,14 +37,14 @@ class SotiSchemaGenerator extends GeneratorForAnnotation<SotiSchema> {
 
   @override
   FutureOr<String> generateForAnnotatedElement(
-    Element2 element,
+    Element element,
     ConstantReader annotation,
     BuildStep buildStep,
   ) async {
     // Helpful diagnostics
     log.info('SotiSchema: processing class ${element.displayName}');
-    // Check if element is a ClassElement2
-    if (element is! ClassElement2) {
+    // Check if element is a ClassElement
+    if (element is! ClassElement) {
       throw InvalidGenerationSourceError(
         'SotiSchema can only be applied to classes: ${element.displayName}',
       );
@@ -52,12 +52,12 @@ class SotiSchemaGenerator extends GeneratorForAnnotation<SotiSchema> {
 
     final buffer = StringBuffer();
 
-    // Use Element2 API to get all getters
-    for (final getter in element.getters2) {
+    // Use Element API to get all getters
+    for (final getter in element.getters) {
       if (!getter.isStatic) continue;
 
       // Check for JsonSchema annotation using the metadata API
-      final hasJsonSchema = getter.metadata2.annotations.any((anno) {
+      final hasJsonSchema = getter.metadata.annotations.any((anno) {
         final value = anno.computeConstantValue();
         if (value == null || value.type == null) return false;
         return _typeCheckers.jsonSchemaChecker.isExactlyType(value.type!);
@@ -151,7 +151,7 @@ class SotiSchemaGenerator extends GeneratorForAnnotation<SotiSchema> {
   }
 
   Future<ParsedLibraryResult> _getParsedLibrary(
-    Element2 element,
+    Element element,
     BuildStep buildStep,
   ) async {
     final assetId = buildStep.inputId;
@@ -160,7 +160,7 @@ class SotiSchemaGenerator extends GeneratorForAnnotation<SotiSchema> {
 
     // Use the session to get the parsed library
     final session = library.session;
-    final parsedLibrary = session.getParsedLibraryByElement2(element.library2!);
+    final parsedLibrary = session.getParsedLibraryByElement(element.library!);
 
     if (parsedLibrary is ParsedLibraryResult) {
       return parsedLibrary;
@@ -197,7 +197,7 @@ class JsonSchemaGenerator {
   final _typeCheckers = TypeCheckers();
   final _generatedSchemas = <String, Map<String, dynamic>>{};
 
-  Map<String, dynamic> generateSchema(ClassElement2 element) {
+  Map<String, dynamic> generateSchema(ClassElement element) {
     _generatedSchemas.clear();
     final mainSchema = _getPropertySchema(element.thisType, isRoot: true);
 
@@ -214,7 +214,7 @@ class JsonSchemaGenerator {
     Set<DartType> seenTypes = const {},
   }) {
     if (!isRoot && seenTypes.contains(type)) {
-      final element = type.element3;
+      final element = type.element;
       if (element != null) {
         return {r'$ref': '#/\$defs/${element.displayName}'};
       }
@@ -273,7 +273,7 @@ class JsonSchemaGenerator {
     bool isRoot,
     Set<DartType> seenTypes,
   ) {
-    final element = type.element3;
+    final element = type.element;
     final typeName = element.displayName;
 
     if (!isRoot && _generatedSchemas.containsKey(typeName)) {
@@ -348,9 +348,9 @@ class JsonSchemaGenerator {
     return schema;
   }
 
-  DataClassType _identifyDataClassType(InterfaceElement2 element) {
+  DataClassType _identifyDataClassType(InterfaceElement element) {
     // Check for JsonSerializable annotation
-    final hasJsonSerializable = element.metadata2.annotations.any((anno) {
+    final hasJsonSerializable = element.metadata.annotations.any((anno) {
       final value = anno.computeConstantValue();
       if (value == null || value.type == null) return false;
       return _typeCheckers.jsonSerializableChecker.isExactlyType(value.type!);
@@ -364,7 +364,7 @@ class JsonSchemaGenerator {
     }
 
     // Heuristic fallback: match by simple name to handle analyzer/URL discrepancies
-    final hasJsonSerializableByName = element.metadata2.annotations.any((anno) {
+    final hasJsonSerializableByName = element.metadata.annotations.any((anno) {
       final t = anno.computeConstantValue()?.type;
       final name = t?.getDisplayString();
       return name == 'JsonSerializable';
@@ -377,7 +377,7 @@ class JsonSchemaGenerator {
     }
 
     // Check for Freezed annotation
-    final hasFreezed = element.metadata2.annotations.any((anno) {
+    final hasFreezed = element.metadata.annotations.any((anno) {
       final value = anno.computeConstantValue();
       if (value == null || value.type == null) return false;
       return _typeCheckers.freezedChecker.isExactlyType(value.type!);
@@ -389,7 +389,7 @@ class JsonSchemaGenerator {
     }
 
     // Provide diagnostics when unsupported
-    final annotations = element.metadata2.annotations
+    final annotations = element.metadata.annotations
         .map(
           (a) =>
               a.computeConstantValue()?.type?.getDisplayString() ?? '<unknown>',
@@ -408,7 +408,7 @@ class JsonSchemaGenerator {
   }
 
   List<PropertyInfo> _getProperties(
-    InterfaceElement2 element,
+    InterfaceElement element,
     DataClassType dataClassType,
   ) {
     switch (dataClassType) {
@@ -424,16 +424,16 @@ class JsonSchemaGenerator {
     }
   }
 
-  List<PropertyInfo> _getJsonSerializableProperties(InterfaceElement2 element) {
+  List<PropertyInfo> _getJsonSerializableProperties(InterfaceElement element) {
     final properties = <PropertyInfo>[];
 
-    // Use Element2 API to get fields
-    for (var field in element.fields2) {
+    // Use Element API to get fields
+    for (var field in element.fields) {
       if (field.isStatic || !field.isPublic) continue;
 
       // Check for JsonKey annotation
       DartObject? jsonKey;
-      for (final anno in field.metadata2.annotations) {
+      for (final anno in field.metadata.annotations) {
         final value = anno.computeConstantValue();
         if (value != null && value.type != null) {
           if (_typeCheckers.jsonKeyChecker.isExactlyType(value.type!)) {
@@ -478,9 +478,9 @@ class JsonSchemaGenerator {
     return properties;
   }
 
-  List<PropertyInfo> _getFreezedProperties(InterfaceElement2 element) {
+  List<PropertyInfo> _getFreezedProperties(InterfaceElement element) {
     final properties = <PropertyInfo>[];
-    final constructor = element.unnamedConstructor2;
+    final constructor = element.unnamedConstructor;
 
     if (constructor == null) {
       throw StateError(
@@ -488,11 +488,11 @@ class JsonSchemaGenerator {
       );
     }
 
-    // Use Element2 API to get parameters
+    // Use Element API to get parameters
     for (var parameter in constructor.formalParameters) {
       // Check for Default annotation
       DartObject? defaultValueAnnotation;
-      for (final anno in parameter.metadata2.annotations) {
+      for (final anno in parameter.metadata.annotations) {
         final value = anno.computeConstantValue();
         if (value != null && value.type != null) {
           if (_typeCheckers.defaultChecker.isExactlyType(value.type!)) {

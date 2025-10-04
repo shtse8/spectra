@@ -8,3 +8,11 @@ builders:
     build_to: cache
     applies_builders: ["source_gen|combining_builder"]
 
+targets:
+  $default:
+    builders:
+      soti_schema_plus|soti_schema:
+        enabled: true
+        generate_for:
+          - test/**
+

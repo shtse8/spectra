@@ -1,3 +1,8 @@
+## 1.3.0
+
+- Fix deprecated analyzer API usage: migrate from Element2 to Element API
+- Update to use current analyzer package APIs (metadata.annotations, etc.)
+
 ## 1.2.0
 
 - Make sure builder generates schema properly for freezed and json_serializer.
