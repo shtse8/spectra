@@ -14,6 +14,18 @@ void main() {
     emptyContext = const EmitContext(definitions: {}, isRoot: false);
   });
 
+  test('formatName', () {
+    expect(emitter31.formatName, 'OpenApi');
+  });
+
+  test('all string formats', () {
+    for (final format in StringFormat.values) {
+      final spec = StringSpec(format: format);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['format'], isNotNull);
+    }
+  });
+
   group('StringSpec', () {
     test('basic string', () {
       const spec = StringSpec();
@@ -59,6 +71,78 @@ void main() {
 
       expect(schema['type'], ['string', 'null']);
       expect(schema['nullable'], isNull);
+    });
+
+    test('OpenAPI 3.1 nullable with already array type', () {
+      // Test edge case where type is already an array
+      const spec = StringSpec(nullable: true);
+      final schema = emitter31.emit(spec, context: emptyContext);
+
+      // Now emit again with nullable already having null
+      expect(schema['type'], contains('null'));
+    });
+  });
+
+  group('String additional', () {
+    test('with default value', () {
+      const spec = StringSpec(defaultValue: 'default');
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['default'], 'default');
+    });
+  });
+
+  group('Number additional', () {
+    test('with default value', () {
+      const spec = NumberSpec(defaultValue: 42);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['default'], 42);
+    });
+
+    test('with multipleOf', () {
+      const spec = NumberSpec(multipleOf: 5);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['multipleOf'], 5);
+    });
+
+    test('with non-exclusive maximum', () {
+      const spec = NumberSpec(maximum: 100);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['maximum'], 100);
+    });
+
+    test('OpenAPI 3.0 exclusive maximum as boolean', () {
+      const spec = NumberSpec(maximum: 100, exclusiveMaximum: true);
+      final schema = emitter30.emit(spec, context: emptyContext);
+      expect(schema['maximum'], 100);
+      expect(schema['exclusiveMaximum'], true);
+    });
+
+    test('OpenAPI 3.1 exclusive maximum as value', () {
+      const spec = NumberSpec(maximum: 100, exclusiveMaximum: true);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['exclusiveMaximum'], 100);
+    });
+
+    test('with non-exclusive minimum', () {
+      const spec = NumberSpec(minimum: 0);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['minimum'], 0);
+    });
+  });
+
+  group('Bool additional', () {
+    test('with default value', () {
+      const spec = BoolSpec(defaultValue: true);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['default'], true);
+    });
+  });
+
+  group('Array additional', () {
+    test('with default value', () {
+      const spec = ArraySpec(items: StringSpec(), defaultValue: ['a']);
+      final schema = emitter31.emit(spec, context: emptyContext);
+      expect(schema['default'], ['a']);
     });
   });
 
@@ -199,6 +283,20 @@ void main() {
 
       expect(schema['oneOf'], hasLength(2));
       expect(schema['discriminator'], {'propertyName': 'type'});
+    });
+
+    test('union without discriminator', () {
+      const spec = UnionSpec(
+        name: 'Result',
+        variants: [
+          ObjectSpec(name: 'Success', properties: {}),
+          ObjectSpec(name: 'Failure', properties: {}),
+        ],
+      );
+      final schema = emitter31.emit(spec, context: emptyContext);
+
+      expect(schema['oneOf'], hasLength(2));
+      expect(schema['discriminator'], isNull);
     });
   });
 

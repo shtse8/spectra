@@ -12,6 +12,121 @@ void main() {
     rootContext = const EmitContext(definitions: {}, isRoot: true);
   });
 
+  test('formatName', () {
+    expect(emitter.formatName, 'Protobuf');
+  });
+
+  test('with package name', () {
+    final emitterWithPackage = ProtobufEmitter(packageName: 'com.example');
+    const spec = ObjectSpec(name: 'User', properties: {});
+    final proto = emitterWithPackage.emit(spec, context: rootContext);
+
+    expect(proto, contains('package com.example;'));
+  });
+
+  test('with description on object', () {
+    const spec = ObjectSpec(
+      name: 'User',
+      description: 'A user model',
+      properties: {},
+    );
+    final proto = emitter.emit(spec, context: rootContext);
+
+    expect(proto, contains('// A user model'));
+  });
+
+  test('with description on field', () {
+    const spec = ObjectSpec(
+      name: 'User',
+      properties: {
+        'name': PropertySpec(
+          name: 'name',
+          type: StringSpec(description: 'User name'),
+        ),
+      },
+    );
+    final proto = emitter.emit(spec, context: rootContext);
+
+    expect(proto, contains('// User name'));
+  });
+
+  test('enum with description', () {
+    const spec = EnumSpec(
+      name: 'Status',
+      description: 'User status',
+      values: [
+        EnumValueSpec(name: 'active', description: 'Active user'),
+      ],
+    );
+    final context = EmitContext(
+      definitions: {'Status': spec},
+      isRoot: true,
+    );
+    final proto = emitter.emit(
+      const ObjectSpec(name: 'Dummy', properties: {}),
+      context: context,
+    );
+
+    expect(proto, contains('// User status'));
+    expect(proto, contains('// Active user'));
+  });
+
+  test('union with description', () {
+    const spec = UnionSpec(
+      name: 'Result',
+      description: 'Operation result',
+      variants: [ObjectSpec(name: 'Ok', properties: {})],
+    );
+    final proto = emitter.emit(spec, context: rootContext);
+
+    expect(proto, contains('// Operation result'));
+  });
+
+  test('nested object reference', () {
+    const spec = ObjectSpec(
+      name: 'User',
+      properties: {
+        'profile': PropertySpec(
+          name: 'profile',
+          type: ObjectSpec(name: 'Profile', properties: {}),
+        ),
+      },
+    );
+    final proto = emitter.emit(spec, context: rootContext);
+
+    expect(proto, contains('Profile profile = 1;'));
+  });
+
+  test('enum type in field', () {
+    const spec = ObjectSpec(
+      name: 'User',
+      properties: {
+        'status': PropertySpec(
+          name: 'status',
+          type: EnumSpec(name: 'Status', values: []),
+        ),
+      },
+    );
+    final proto = emitter.emit(spec, context: rootContext);
+
+    expect(proto, contains('Status status = 1;'));
+  });
+
+  test('union type in field', () {
+    const spec = ObjectSpec(
+      name: 'User',
+      properties: {
+        'result': PropertySpec(
+          name: 'result',
+          type: UnionSpec(name: 'Result', variants: []),
+        ),
+      },
+    );
+    final proto = emitter.emit(spec, context: rootContext);
+
+    expect(proto, contains('Result result = 1;'));
+  });
+
   group('Primitive types', () {
     test('StringSpec emits string', () {
       const spec = ObjectSpec(
