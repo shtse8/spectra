@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "coderag": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sylphx/coderag-mcp"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "",
+        "CODEBASE_ROOT": "",
+        "INDEX_PATH": ".coderag"
+      }
+    }
+  }
+}

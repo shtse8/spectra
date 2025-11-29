@@ -1,0 +1,14 @@
+# Development files
+.claude/
+.mcp.json
+PLAN.md
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build
+.dart_tool/
+build/

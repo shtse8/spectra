@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:spectra/spectra.dart';
+import 'package:spectra_schema/spectra.dart';
 
 part 'product.g.dart';
 

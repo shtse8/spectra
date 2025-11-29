@@ -2,7 +2,7 @@
 
 [![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![pub package](https://img.shields.io/pub/v/spectra.svg)](https://pub.dev/packages/spectra)
+[![pub package](https://img.shields.io/pub/v/spectra_schema.svg)](https://pub.dev/packages/spectra_schema)
 
 Transform your Dart data classes into **JSON Schema**, **OpenAPI**, and **Protocol Buffers** specifications with a single annotation.
 
@@ -30,7 +30,7 @@ class User with _$User {
 ## Installation
 
 ```bash
-dart pub add spectra
+dart pub add spectra_schema
 dart pub add dev:build_runner
 ```
 
@@ -40,7 +40,7 @@ dart pub add dev:build_runner
 
 ```dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:spectra/spectra.dart';
+import 'package:spectra_schema/spectra.dart';
 
 part 'user.freezed.dart';
 part 'user.g.dart';
@@ -74,7 +74,7 @@ targets:
 global_options:
   freezed|freezed:
     runs_before:
-      - spectra|spectra
+      - spectra_schema|spectra_schema
 ```
 
 ### 3. Generate
@@ -207,7 +207,7 @@ message User {
 
 ```diff
 - import 'package:soti_schema/soti_schema.dart';
-+ import 'package:spectra/spectra.dart';
++ import 'package:spectra_schema/spectra.dart';
 
 - @SotiSchema()
 + @Spectra()
@@ -217,7 +217,7 @@ message User {
 
 # build.yaml
 - soti_schema|openApiBuilder
-+ spectra|spectra
++ spectra_schema|spectra_schema
 ```
 
 ## License

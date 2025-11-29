@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 // Note: After running `dart run build_runner build`, uncomment these imports:
-// import 'package:spectra_example/models/user.dart';
-// import 'package:spectra_example/models/product.dart';
+// import 'package:spectra_schema_example/models/user.dart';
+// import 'package:spectra_schema_example/models/product.dart';
 
 void main() {
   print('Spectra Example');

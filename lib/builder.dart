@@ -6,5 +6,5 @@ import 'src/generator/spectra_generator.dart';
 /// Builder factory for Spectra code generator.
 Builder spectraBuilder(BuilderOptions options) => SharedPartBuilder(
       [SpectraGenerator()],
-      'spectra',
+      'spectra_schema',
     );

@@ -1,4 +1,4 @@
-import 'package:spectra/src/spec/spec.dart';
+import 'package:spectra_schema/src/spec/spec.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:spectra/spectra.dart';
+import 'package:spectra_schema/spectra.dart';
 
 part 'user.freezed.dart';
 part 'user.g.dart';

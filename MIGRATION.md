@@ -266,11 +266,11 @@ sealed class Result with _$Result {
 
 # build.yaml
 - soti_schema|soti_schema
-+ spectra|spectra
++ spectra_schema|spectra_schema
 
 # Dart files
 - import 'package:soti_schema/soti_schema.dart';
-+ import 'package:spectra/spectra.dart';
++ import 'package:spectra_schema/spectra.dart';
 
 - @SotiSchema()
 + @Spectra()

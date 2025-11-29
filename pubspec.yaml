@@ -1,4 +1,4 @@
-name: spectra
+name: spectra_schema
 description: >-
   A powerful Dart code generator that transforms your data classes into
   JSON Schema, OpenAPI, and Protobuf specifications. Perfect for AI integrations

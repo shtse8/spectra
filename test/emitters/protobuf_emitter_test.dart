@@ -1,6 +1,6 @@
-import 'package:spectra/src/emitters/emitter.dart';
-import 'package:spectra/src/emitters/protobuf_emitter.dart';
-import 'package:spectra/src/spec/spec.dart';
+import 'package:spectra_schema/src/emitters/emitter.dart';
+import 'package:spectra_schema/src/emitters/protobuf_emitter.dart';
+import 'package:spectra_schema/src/spec/spec.dart';
 import 'package:test/test.dart';
 
 void main() {
