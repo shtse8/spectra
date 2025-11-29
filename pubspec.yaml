@@ -1,8 +1,11 @@
-name: soti_schema
-description: A powerful tool for generating schemas from Dart data classes, enabling seamless integration with AI models and data validation systems.
-version: 1.0.0
-homepage: https://github.com/shtse8/SotiSchema
-repository: https://github.com/shtse8/SotiSchema
+name: spectra
+description: >-
+  A powerful Dart code generator that transforms your data classes into
+  JSON Schema, OpenAPI, and Protobuf specifications. Perfect for AI integrations
+  and API documentation.
+version: 2.0.0
+homepage: https://github.com/shtse8/spectra
+repository: https://github.com/shtse8/spectra
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -20,3 +23,4 @@ dev_dependencies:
   lints: ^4.0.0
   test: ^1.24.0
   build_runner: ^2.4.6
+  build_test: ^2.2.2

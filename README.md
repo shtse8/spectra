@@ -1,37 +1,29 @@
-# SotiSchema
+# Spectra
 
-Welcome to **SotiSchema** – your ultimate tool for generating schemas directly from your Dart data classes. Whether you're working with `freezed` or `json_serializable`, SotiSchema simplifies the process, enabling seamless integration with AI models, robust data validation, and more.
-
----
-
-## 🎯 Why SotiSchema?
-
-**SotiSchema** is designed for developers who value efficiency and precision. If you're tired of manually maintaining schemas and ensuring they stay in sync with your code, SotiSchema is the solution you've been waiting for.
-
-### **Key Benefits:**
-
-- **Effortless Schema Generation:** Simply annotate your Dart classes, and SotiSchema does the rest.
-- **AI-Powered Applications:** Generate schemas that enforce structured responses from AI models.
-- **Future-Proof:** Prepare for upcoming support of various schema formats, including Protocol Buffers, Avro, and Thrift.
-- **Seamless Integration:** Perfectly complements your existing tools, whether you're using `freezed`, `json_serializable`, or custom Dart types.
+**Spectra** transforms your Dart data classes into JSON Schema, OpenAPI, and Protocol Buffers specifications. Whether you're working with `freezed`, `json_serializable`, or plain Dart classes, Spectra simplifies schema generation with powerful annotations and flexible output formats.
 
 ---
 
-## 🚀 Getting Started
+## Features
 
-### Installation
+- **Multi-format Output**: Generate JSON Schema, OpenAPI 3.0/3.1, and Protocol Buffers from a single source
+- **Flexible Annotations**: Rich annotation system for constraints, descriptions, and customization
+- **Framework Support**: Works with `freezed`, `json_serializable`, and plain Dart classes
+- **Union Types**: Full support for Freezed sealed class unions with discriminators
+- **Type Safety**: Comprehensive validation constraints for strings, numbers, and arrays
 
-Get started with SotiSchema in just one step:
+---
+
+## Installation
 
 ```bash
-dart pub add soti_schema
+dart pub add spectra
+dart pub add dev:build_runner
 ```
 
-This command will add SotiSchema to your project, ready for immediate use.
+## Configuration
 
-### Configuration
-
-To make SotiSchema work harmoniously with `freezed` and `json_serializable`, configure your `build.yaml` file like this:
+Add to your `build.yaml`:
 
 ```yaml
 targets:
@@ -44,250 +36,295 @@ targets:
 global_options:
   freezed|freezed:
     runs_before:
-      - soti_schema|openApiBuilder
+      - spectra|spectra
 ```
-
-### Why This Configuration?
-
-- **`explicit_to_json: true`** ensures that nested objects are correctly serialized by generating explicit `toJson` methods.
-- **`runs_before`** guarantees that `freezed` runs before SotiSchema, ensuring that everything is in place when SotiSchema processes your classes.
 
 ---
 
-## 💡 How to Use SotiSchema
+## Quick Start
 
-### Example with `freezed`
-
-Here’s how to generate a JSON schema using SotiSchema with a `freezed` class:
+### With Freezed
 
 ```dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:soti_schema/soti_schema.dart';
+import 'package:spectra/spectra.dart';
 
-part 'example_model.freezed.dart';
-part 'example_model.g.dart';
+part 'user.freezed.dart';
+part 'user.g.dart';
 
 @freezed
-@SotiSchema()
-class ExampleModel with _$ExampleModel {
-  const factory ExampleModel({
-    @Default('') String name,
-    @Default(0) int age,
-    @Default([]) List<String> hobbies,
-  }) = _ExampleModel;
+@Spectra(title: 'User', description: 'A user in the system')
+class User with _$User {
+  const factory User({
+    /// The user's display name
+    @Field(minLength: 1, maxLength: 100) required String name,
 
-  factory ExampleModel.fromJson(Map<String, dynamic> json) =>
-      _$ExampleModelFromJson(json);
+    /// Email address
+    @Field(format: StringFormat.email) required String email,
 
-  @jsonSchema
-  static String get schema => _$ExampleModelSchema;
+    /// Age in years
+    @Field(minimum: 0, maximum: 150) int? age,
+  }) = _User;
+
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+
+  @spectraOutput
+  static String get jsonSchema => _$UserJsonSchema;
+
+  @spectraOutput
+  static Map<String, dynamic> get jsonSchemaMap => _$UserJsonSchemaMap;
 }
 ```
 
-### Example with `json_serializable`
-
-Prefer `json_serializable`? SotiSchema has you covered:
+### With JsonSerializable
 
 ```dart
 import 'package:json_annotation/json_annotation.dart';
-import 'package:soti_schema/soti_schema.dart';
+import 'package:spectra/spectra.dart';
 
-part 'example_model.g.dart';
+part 'product.g.dart';
 
-@SotiSchema()
 @JsonSerializable()
-class ExampleModel {
+@Spectra(formats: {SpectraFormat.jsonSchema, SpectraFormat.openApi})
+class Product {
+  /// Product name
+  @Field(minLength: 1)
   final String name;
-  final int age;
-  final List<String> hobbies;
 
-  ExampleModel({
-    this.name = '',
-    this.age = 0,
-    this.hobbies = const [],
+  /// Price in cents
+  @Field(minimum: 0)
+  final int price;
+
+  /// Available tags
+  @Field(minItems: 0, maxItems: 10, uniqueItems: true)
+  final List<String> tags;
+
+  Product({
+    required this.name,
+    required this.price,
+    this.tags = const [],
   });
 
-  factory ExampleModel.fromJson(Map<String, dynamic> json) =>
-      _$ExampleModelFromJson(json);
+  factory Product.fromJson(Map<String, dynamic> json) => _$ProductFromJson(json);
+  Map<String, dynamic> toJson() => _$ProductToJson(this);
 
-  Map<String, dynamic> toJson() => _$ExampleModelToJson(this);
-
-  @jsonSchema
-  static String get schema => _$ExampleModelSchema;
-
-  @jsonSchema
-  static Map<String, dynamic> get schemaMap => _$ExampleModelSchemaMap;
+  @spectraOutput
+  static String get schema => _$ProductJsonSchema;
 }
 ```
 
-### Adding Descriptions to Your Schema
-
-When generating schemas with SotiSchema, you can include descriptions for your fields in two ways:
-
-1. **Doc Comments**: Use regular Dart doc comments (`///`) above your class fields. SotiSchema will automatically extract these comments and include them as descriptions in the generated schema.
-
-2. **`@Description` Annotation**: If you prefer more control or want to add descriptions that differ from your doc comments, you can use the `@Description` annotation. This approach allows you to provide explicit descriptions directly.
-
-#### Example with Doc Comments
+### Union Types (Sealed Classes)
 
 ```dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:soti_schema/soti_schema.dart';
-
-part 'example_model.freezed.dart';
-part 'example_model.g.dart';
-
 @freezed
-@SotiSchema()
-class ExampleModel with _$ExampleModel {
-  const factory ExampleModel({
-    /// The name of the person.
-    @Default('') String name,
+@Spectra()
+sealed class Result with _$Result {
+  const factory Result.success({required String data}) = Success;
+  const factory Result.error({required String message, int? code}) = Error;
 
-    /// The age of the person in years.
-    @Default(0) int age,
+  factory Result.fromJson(Map<String, dynamic> json) => _$ResultFromJson(json);
 
-    /// A list of hobbies the person enjoys.
-    @Default([]) List<String> hobbies,
-  }) = _ExampleModel;
-
-  factory ExampleModel.fromJson(Map<String, dynamic> json) =>
-      _$ExampleModelFromJson(json);
-
-  @jsonSchema
-  static String get schema => _$ExampleModelSchema;
+  @spectraOutput
+  static String get schema => _$ResultJsonSchema;
 }
 ```
 
-In this example, the doc comments will be used as descriptions in the generated JSON schema.
+Generated schema includes `oneOf` with discriminator:
 
-#### Example with `@Description` Annotation
-
-```dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:soti_schema/soti_schema.dart';
-import 'package:meta/meta.dart';
-
-part 'example_model.freezed.dart';
-part 'example_model.g.dart';
-
-@freezed
-@SotiSchema()
-class ExampleModel with _$ExampleModel {
-  const factory ExampleModel({
-    @Description('The name of the person.')
-    @Default('') String name,
-
-    @Description('The age of the person in years.')
-    @Default(0) int age,
-
-    @Description('A list of hobbies the person enjoys.')
-    @Default([]) List<String> hobbies,
-  }) = _ExampleModel;
-
-  factory ExampleModel.fromJson(Map<String, dynamic> json) =>
-      _$ExampleModelFromJson(json);
-
-  @jsonSchema
-  static String get schema => _$ExampleModelSchema;
-}
-```
-
-In this example, the `@Description` annotations will be used as descriptions in the generated JSON schema.
-
-### Flexible Schema Naming
-
-With SotiSchema, you have the freedom to name your schema methods however you like and choose between returning a `String` or `Map<String, dynamic>`. SotiSchema adapts to your needs:
-
-```dart
-@jsonSchema
-static String get customSchemaName => _$ExampleModelSchema;
-
-@jsonSchema
-static Map<String, dynamic> get anotherSchema => _$ExampleModelSchemaMap;
-```
-
----
-
-## 📋 Supported Dart Data Types
-
-SotiSchema currently supports:
-
-- **`freezed`**: ✔️ Supported
-- **`json_serializable`**: ✔️ Supported
-
-### Coming Soon:
-
-- **Custom Data Types**: 🛠 Planned
-- **Protocol Buffers**: 🛠 Planned
-- **Avro**: 🛠 Planned
-- **Thrift**: 🛠 Planned
-
----
-
-## 🌟 Why Developers Love SotiSchema
-
-**"SotiSchema has completely transformed how we handle data validation and AI integrations. The ease of generating accurate schemas directly from our Dart classes is unmatched."**  
-– *Satisfied Developer*
-
----
-
-## 💼 Real-World Use Case
-
-### AI Integration Example
-
-Imagine you’re building an AI-powered application. SotiSchema helps ensure that AI responses adhere to the strict structure defined by your schemas:
-
-```dart
-import 'package:langchain/langchain.dart';
-import 'package:your_project/example_model.dart'; // Assuming this is where your ExampleModel class is defined
-
-void main() {
-  final openaiApiKey = 'your-openai-api-key';
-
-  final model = ChatOpenAI(
-    apiKey: openaiApiKey,
-    defaultOptions: const ChatOpenAIOptions(
-      responseFormat: ChatOpenAIResponseFormat(
-        type: ChatOpenAIResponseFormatType.jsonObject,
-      ),
-    ),
-  );
-
-  final parser = JsonOutputParser<ChatResult>();
-  final mapper = Runnable.mapInputStream(
-    (Stream<Map<String, dynamic>> inputStream) => inputStream.map((input) {
-      return ExampleModel.fromJson(input);
-    }).distinct(),
-  );
-
-  final chain = model.pipe(parser).pipe(mapper);
-
-  final stream = chain.stream(
-    PromptValue.string('''
-Describe a person using the schema provided.
-${ExampleModel.schema}
-    '''),
-  );
-
-  stream.listen((response) {
-    print(response);  // This response will be a JSON object that matches your schema
-  });
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    { "$ref": "#/$defs/Success" },
+    { "$ref": "#/$defs/Error" }
+  ],
+  "discriminator": { "propertyName": "runtimeType" }
 }
 ```
 
 ---
 
-## 🤝 Get Involved
+## Annotations
 
-We welcome contributions! If you have ideas for new features, enhancements, or bug fixes, please check out our [contributing guidelines](CONTRIBUTING.md).
+### @Spectra
+
+Class-level annotation for schema configuration.
+
+```dart
+@Spectra(
+  title: 'User',                    // Schema title
+  description: 'A user object',     // Schema description
+  formats: {SpectraFormat.jsonSchema, SpectraFormat.openApi},
+  additionalProperties: false,      // Disallow extra properties
+)
+```
+
+### @Field
+
+Field-level constraints and metadata.
+
+```dart
+// String constraints
+@Field(
+  minLength: 1,
+  maxLength: 100,
+  pattern: r'^[a-z]+$',
+  format: StringFormat.email,
+)
+String email;
+
+// Number constraints
+@Field(
+  minimum: 0,
+  maximum: 100,
+  exclusiveMinimum: true,
+  multipleOf: 0.5,
+)
+double score;
+
+// Array constraints
+@Field(
+  minItems: 1,
+  maxItems: 10,
+  uniqueItems: true,
+)
+List<String> tags;
+
+// Common options
+@Field(
+  description: 'Custom description',
+  deprecated: true,
+  examples: ['example1', 'example2'],
+)
+```
+
+### @Ignore
+
+Exclude fields from schema generation.
+
+```dart
+@Ignore()
+String internalField;
+```
+
+### @spectraOutput
+
+Mark getters that return generated schema.
+
+```dart
+@spectraOutput
+static String get jsonSchema => _$UserJsonSchema;
+
+@spectraOutput
+static Map<String, dynamic> get schemaMap => _$UserJsonSchemaMap;
+```
 
 ---
 
-## 📄 License
+## String Formats
 
-SotiSchema is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+Spectra supports standard JSON Schema string formats:
+
+| Format | Description |
+|--------|-------------|
+| `StringFormat.email` | Email address |
+| `StringFormat.uri` | URI |
+| `StringFormat.uuid` | UUID |
+| `StringFormat.dateTime` | ISO 8601 date-time |
+| `StringFormat.date` | ISO 8601 date |
+| `StringFormat.time` | ISO 8601 time |
+| `StringFormat.ipv4` | IPv4 address |
+| `StringFormat.ipv6` | IPv6 address |
+| `StringFormat.hostname` | Hostname |
+| `StringFormat.regex` | Regular expression |
 
 ---
 
-Thank you for choosing SotiSchema! We’re excited to see what you create with it. If you have any questions or suggestions, don’t hesitate to open an issue or contribute to the project. Happy coding!
+## Output Formats
+
+### JSON Schema (Draft 2020-12)
+
+```dart
+@Spectra(formats: {SpectraFormat.jsonSchema})
+```
+
+Generates compliant JSON Schema with full support for:
+- Type constraints (string, number, array)
+- Nullable types via `type: ["string", "null"]`
+- References via `$ref` and `$defs`
+- Union types via `oneOf`
+
+### OpenAPI 3.0/3.1
+
+```dart
+@Spectra(formats: {SpectraFormat.openApi})
+```
+
+Generates OpenAPI-compatible schemas with:
+- OpenAPI 3.0 nullable support (`nullable: true`)
+- OpenAPI 3.1 JSON Schema compatibility
+- Component references (`#/components/schemas/`)
+
+### Protocol Buffers
+
+```dart
+@Spectra(formats: {SpectraFormat.protobuf})
+```
+
+Generates proto3 message definitions:
+
+```protobuf
+syntax = "proto3";
+
+message User {
+  string name = 1;
+  string email = 2;
+  optional int32 age = 3;
+}
+```
+
+---
+
+## Running the Generator
+
+```bash
+dart run build_runner build
+```
+
+Or watch for changes:
+
+```bash
+dart run build_runner watch
+```
+
+---
+
+## Generated Files
+
+For a file `user.dart`, Spectra generates:
+
+- `user.g.dart` - Contains schema getters (`_$UserJsonSchema`, `_$UserJsonSchemaMap`)
+
+Access via your annotated getters:
+
+```dart
+print(User.jsonSchema);     // JSON string
+print(User.jsonSchemaMap);  // Map<String, dynamic>
+```
+
+---
+
+## Migration from SotiSchema
+
+If upgrading from SotiSchema 1.x:
+
+1. Update import: `package:soti_schema/soti_schema.dart` → `package:spectra/spectra.dart`
+2. Rename annotation: `@SotiSchema()` → `@Spectra()`
+3. Rename output marker: `@jsonSchema` → `@spectraOutput`
+4. Update build.yaml: `soti_schema|openApiBuilder` → `spectra|spectra`
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
